@@ -21,6 +21,9 @@ func main() {
 
 	pages, srcs := ScrapeAddress(domainName)
 
+	f.Println("---")
+	f.Println("Scrape Complete:")
+
 	printPages(pages)
 	f.Println("--------")
 	printAssets(srcs)
@@ -36,10 +39,18 @@ func ScrapeAddress(address string) ([]string, []string) {
 	c := colly.NewCollector(
 		// Limit to only the specific dom
 		colly.AllowedDomains(address, "www."+address),
+
+		// Limit depth so that only the page and links on that page are
+		// visited in parallel
+		colly.MaxDepth(2),
+		colly.Async(true),
 	)
 
 	// Rate limit to prevent getting barred
+	// Parallel limit to control simultaneous requests
 	c.Limit(&colly.LimitRule{
+		DomainGlob:  "*",
+		Parallelism: 2,
 		Delay:       1 * time.Second,
 		RandomDelay: 1 * time.Second,
 	})
@@ -69,10 +80,6 @@ func ScrapeAddress(address string) ([]string, []string) {
 		}
 	})
 
-	c.OnHTML("*", func(e *colly.HTMLElement) {
-		f.Println(e)
-	})
-
 	// When a response for a visit attempt is recieved
 	c.OnResponse(func(r *colly.Response) {
 		f.Println("Visited", r.Request.URL)
@@ -83,6 +90,8 @@ func ScrapeAddress(address string) ([]string, []string) {
 	})
 
 	c.Visit("https://" + address)
+
+	c.Wait()
 
 	return pages, srcs
 }
@@ -116,7 +125,7 @@ func inSlice(s []string, x string) bool {
 func getInput() string {
 
 	// This pattern should match any valid TLD (i.e. .com .co.uk etc...)
-	urlPattern := `^\w+(\.\w{2,3})(\.\w\w){0,1}$`
+	urlPattern := `^[a-zA-Z0-9\.]+(\.\w{2,3})(\.\w\w){0,1}$`
 
 	reader := io.NewReader(os.Stdin)
 	f.Println("Please give a domain name:")
