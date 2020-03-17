@@ -130,7 +130,7 @@ func inSlice(s []string, x string) bool {
 func getInput() string {
 
 	// This pattern should match any valid TLD (i.e. .com .co.uk etc...)
-	urlPattern := `^[a-zA-Z0-9\.]+(\.\w{2,3})(\.\w\w){0,1}$`
+	urlPattern := `^[a-zA-Z0-9\.]+(\.\w+)(\.\w\w){0,1}$`
 
 	reader := io.NewReader(os.Stdin)
 	f.Println("Please give a domain name:")
