@@ -52,7 +52,8 @@ func ScrapeAddress(address string) ([]string, []string) {
 	// Rate limit to prevent getting barred
 	// Parallel limit to control simultaneous requests
 	c.Limit(&colly.LimitRule{
-		DomainGlob:  "*",
+		DomainGlob: "*",
+		// Nothing seemed to happen here when I increased the number
 		Parallelism: 2,
 		Delay:       1 * time.Second,
 		RandomDelay: 1 * time.Second,
