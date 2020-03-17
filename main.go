@@ -25,6 +25,9 @@ func main() {
 	f.Println("---")
 	f.Println("Scrape Complete:")
 
+	removeHTTP(pages)
+	removeHTTP(srcs)
+
 	printPages(pages)
 	f.Println("--------")
 	printAssets(srcs)
@@ -95,7 +98,7 @@ func ScrapeAddress(address string) ([]string, []string) {
 		}
 	})
 
-	c.Visit("https://" + address)
+	c.Visit("http://" + address)
 
 	c.Wait()
 
@@ -106,7 +109,8 @@ func ScrapeAddress(address string) ([]string, []string) {
 func printPages(pages []string) {
 	f.Printf("Found Pages: (%v)\n", len(pages))
 	for _, v := range pages {
-		f.Println(strings.ReplaceAll(v, "https://", ""))
+		f.Println(v)
+		f.Println(strings.ReplaceAll(v, "http://", ""))
 	}
 }
 
@@ -131,7 +135,7 @@ func inSlice(s []string, x string) bool {
 func getInput() string {
 
 	// This pattern should match any valid TLD (i.e. .com .co.uk etc...)
-	urlPattern := `^[a-zA-Z0-9\.]+(\.\w+)(\.\w\w){0,1}$`
+	urlPattern := `^[a-zA-Z0-9\.\-]+(\.\w+)(\.\w\w){0,1}$`
 
 	reader := io.NewReader(os.Stdin)
 	f.Println("Please give a domain name:")
@@ -239,4 +243,12 @@ func writeLine(text string, file *os.File) error {
 
 	return nil
 
+}
+
+// Removes the http or https front of a string
+func removeHTTP(slice []string) {
+	for i := range slice {
+		slice[i] = strings.ReplaceAll(slice[i], "https://", "")
+		slice[i] = strings.ReplaceAll(slice[i], "http://", "")
+	}
 }
