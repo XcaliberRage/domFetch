@@ -9,6 +9,7 @@ import (
 	f "fmt"
 	"os"
 	"regexp"
+	sc "strconv"
 	"strings"
 	"time"
 
@@ -28,6 +29,8 @@ func main() {
 	f.Println("--------")
 	printAssets(srcs)
 
+	writeInfo(pages, srcs, domainName)
+
 }
 
 // ScrapeAddress handles all scraping and associated methods
@@ -42,7 +45,7 @@ func ScrapeAddress(address string) ([]string, []string) {
 
 		// Limit depth so that only the page and links on that page are
 		// visited in parallel
-		colly.MaxDepth(0),
+		colly.MaxDepth(1),
 		colly.Async(true),
 	)
 
@@ -68,7 +71,9 @@ func ScrapeAddress(address string) ([]string, []string) {
 	// Get anything with a href
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
+
 		c.Visit(e.Request.AbsoluteURL(link))
+
 	})
 
 	// Get anything with a src attribute
@@ -152,4 +157,85 @@ func getInput() string {
 		f.Printf("Recieved %q, please give a valid domain\n", text)
 		f.Println("-----")
 	}
+}
+
+// Write the scraped data to an output file named after the domain
+func writeInfo(pages []string, srcs []string, domain string) {
+
+	f.Println("Writing file...")
+
+	fName := domain + "_log.txt"
+
+	// First check the file exists, if it does, wipe it
+	if _, err := os.Stat(fName); err == nil {
+		err = os.Remove(fName)
+		if err != nil {
+			f.Println(err)
+			return
+		}
+	}
+
+	// Now recreate a blank file with the name
+	file, err := os.Create(domain + "_log.txt")
+	if err != nil {
+		f.Println(err)
+		file.Close()
+		return
+	}
+
+	// Write the Pages info
+	pageHead := sc.Itoa(len(pages)) + " Pages Found: "
+	err = writeLine(pageHead, file)
+	if err != nil {
+		file.Close()
+		return
+	}
+
+	for _, v := range pages {
+		err = writeLine(v, file)
+		if err != nil {
+			file.Close()
+			return
+		}
+	}
+
+	// The write the Assets info
+	err = writeLine("", file)
+	if err != nil {
+		file.Close()
+		return
+	}
+
+	assHead := sc.Itoa(len(srcs)) + " Assests Found: "
+	err = writeLine(assHead, file)
+	if err != nil {
+		file.Close()
+		return
+	}
+
+	for _, v := range srcs {
+		err = writeLine(v, file)
+		if err != nil {
+			file.Close()
+			return
+		}
+	}
+
+	file.Close()
+	f.Println("File Write Successful")
+	return
+
+}
+
+// Write individual lines to the given file
+func writeLine(text string, file *os.File) error {
+
+	_, err := f.Fprintln(file, text)
+	if err != nil {
+		f.Println(err)
+		return err
+	}
+
+	return nil
+
 }
