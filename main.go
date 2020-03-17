@@ -42,7 +42,7 @@ func ScrapeAddress(address string) ([]string, []string) {
 
 		// Limit depth so that only the page and links on that page are
 		// visited in parallel
-		colly.MaxDepth(2),
+		colly.MaxDepth(0),
 		colly.Async(true),
 	)
 
